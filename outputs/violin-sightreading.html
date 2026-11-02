@@ -289,15 +289,23 @@
     @media (max-width: 860px) {
       .main { grid-template-columns: 1fr; }
       .left-positions {
-        grid-template-rows: repeat(5, 56px);
+        grid-template-rows: 58px repeat(4, 58px);
         gap: 10px;
+        margin-top: 12px;
       }
       .string-grid { gap: 10px; }
       .string-col {
-        grid-template-rows: 18px repeat(5, 56px);
+        grid-template-rows: 58px repeat(4, 58px);
         gap: 10px;
       }
-      .stop { height: 56px; }
+      .string-col::after {
+        top: 78px;
+      }
+      .string-col::before {
+        top: 60px;
+        height: 20px;
+      }
+      .stop { height: 58px; }
       .stop.slot-2l { transform: translateY(-11px); }
       .stop.slot-2h { transform: translateY(11px); }
       .left-positions .pos-label:nth-child(3) { transform: translateY(-11px); }

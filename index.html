@@ -113,7 +113,7 @@
     }
     .left-positions {
       display: grid;
-      grid-template-rows: 62px repeat(4, 62px);
+      grid-template-rows: 62px repeat(5, 62px);
       gap: 12px;
       margin-top: 14px;
     }
@@ -163,7 +163,7 @@
     }
     .string-col {
       display: grid;
-      grid-template-rows: 62px repeat(4, 62px);
+      grid-template-rows: 62px repeat(5, 62px);
       gap: 12px;
       position: relative;
     }
@@ -289,13 +289,13 @@
     @media (max-width: 860px) {
       .main { grid-template-columns: 1fr; }
       .left-positions {
-        grid-template-rows: 58px repeat(4, 58px);
+        grid-template-rows: 58px repeat(5, 58px);
         gap: 10px;
         margin-top: 12px;
       }
       .string-grid { gap: 10px; }
       .string-col {
-        grid-template-rows: 58px repeat(4, 58px);
+        grid-template-rows: 58px repeat(5, 58px);
         gap: 10px;
       }
       .string-col::after {
@@ -356,27 +356,31 @@
       { id: 'Bb3', label: 'B♭3', zh: 'G弦 2指低位（贴1指）', string: 'G弦', finger: '2低', midi: 58, step: -3, accidental: 'b', slot: '2l' },
       { id: 'B3', label: 'B3', zh: 'G弦 2指高位（贴3指）', string: 'G弦', finger: '2高', midi: 59, step: -3, slot: '2h' },
       { id: 'C4', label: 'C4', zh: 'G弦 3指', string: 'G弦', finger: '3', midi: 60, step: -2 },
+      { id: 'D4_G4', label: 'D4', zh: 'G弦 4指', string: 'G弦', finger: '4', midi: 62, step: -1, slot: '4' },
 
       { id: 'D4', label: 'D4', zh: 'D弦 空弦', string: 'D弦', finger: '0', midi: 62, step: -1 },
       { id: 'E4', label: 'E4', zh: 'D弦 1指', string: 'D弦', finger: '1', midi: 64, step: 0 },
       { id: 'F4', label: 'F4', zh: 'D弦 2指低位（贴1指）', string: 'D弦', finger: '2低', midi: 65, step: 1, slot: '2l' },
       { id: 'F#4', label: 'F♯4', zh: 'D弦 2指高位（贴3指）', string: 'D弦', finger: '2高', midi: 66, step: 1, accidental: '#', slot: '2h' },
       { id: 'G4', label: 'G4', zh: 'D弦 3指', string: 'D弦', finger: '3', midi: 67, step: 2 },
+      { id: 'A4_D4', label: 'A4', zh: 'D弦 4指', string: 'D弦', finger: '4', midi: 69, step: 3, slot: '4' },
 
       { id: 'A4', label: 'A4', zh: 'A弦 空弦', string: 'A弦', finger: '0', midi: 69, step: 3 },
       { id: 'B4', label: 'B4', zh: 'A弦 1指', string: 'A弦', finger: '1', midi: 71, step: 4 },
       { id: 'C5', label: 'C5', zh: 'A弦 2指低位（贴1指）', string: 'A弦', finger: '2低', midi: 72, step: 5, slot: '2l' },
       { id: 'C#5', label: 'C♯5', zh: 'A弦 2指高位（贴3指）', string: 'A弦', finger: '2高', midi: 73, step: 5, accidental: '#', slot: '2h' },
       { id: 'D5', label: 'D5', zh: 'A弦 3指', string: 'A弦', finger: '3', midi: 74, step: 6 },
+      { id: 'E5_A4', label: 'E5', zh: 'A弦 4指', string: 'A弦', finger: '4', midi: 76, step: 7, slot: '4' },
 
       { id: 'E5', label: 'E5', zh: 'E弦 空弦', string: 'E弦', finger: '0', midi: 76, step: 7 },
       { id: 'F#5', label: 'F♯5', zh: 'E弦 1指', string: 'E弦', finger: '1', midi: 78, step: 8, accidental: '#' },
       { id: 'G5', label: 'G5', zh: 'E弦 2指低位（贴1指）', string: 'E弦', finger: '2低', midi: 79, step: 9, slot: '2l' },
       { id: 'G#5', label: 'G♯5', zh: 'E弦 2指高位（贴3指）', string: 'E弦', finger: '2高', midi: 80, step: 9, accidental: '#', slot: '2h' },
-      { id: 'A5', label: 'A5', zh: 'E弦 3指', string: 'E弦', finger: '3', midi: 81, step: 10 }
+      { id: 'A5', label: 'A5', zh: 'E弦 3指', string: 'E弦', finger: '3', midi: 81, step: 10 },
+      { id: 'B5_E4', label: 'B5', zh: 'E弦 4指', string: 'E弦', finger: '4', midi: 83, step: 11, slot: '4' }
     ].map(n => ({ ...n, slot: n.slot || n.finger.replace('指', '') }));
 
-    const POSITION_ORDER = ['0', '1', '2l', '2h', '3'];
+    const POSITION_ORDER = ['0', '1', '2l', '2h', '3', '4'];
 
     const strings = ['G弦', 'D弦', 'A弦', 'E弦'];
     const rowsEl = document.getElementById('rows');
@@ -417,6 +421,7 @@
         <div class="pos-label">2指低</div>
         <div class="pos-label">2指高</div>
         <div class="pos-label">3指</div>
+        <div class="pos-label">4指</div>
       `;
 
       const stringGrid = document.createElement('div');

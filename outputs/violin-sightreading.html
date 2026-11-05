@@ -541,6 +541,7 @@
         const openDot = document.createElement('div');
         openDot.className = 'dot';
         openDot.dataset.id = openNote.id;
+        openDot.dataset.midi = String(openNote.midi);
         openDot.title = `${openNote.zh} (${openNote.label})`;
         const openEnabled = !allowed || allowed.has(openNote.midi % 12);
         if (openEnabled) {
@@ -561,6 +562,7 @@
           const b = document.createElement('div');
           b.className = 'dot';
           b.dataset.id = n.id;
+          b.dataset.midi = String(n.midi);
           b.title = `${n.zh} (${n.label})`;
           const enabled = !allowed || allowed.has(n.midi % 12);
           if (enabled) {
@@ -721,7 +723,7 @@
     }
 
     function choose(selected) {
-      const isRight = selected.id === current.id;
+      const isRight = selected.midi === current.midi;
       if (isRight) {
         correctCount += 1;
         streak += 1;
@@ -736,10 +738,10 @@
     }
 
     function highlightExpected() {
-      const target = rowsEl.querySelector(`.dot[data-id="${CSS.escape(current.id)}"]`);
-      if (!target) return;
-      target.classList.add('expected');
-      setTimeout(() => target.classList.remove('expected'), 700);
+      const targets = rowsEl.querySelectorAll(`.dot[data-midi="${String(current.midi)}"]`);
+      if (!targets.length) return;
+      targets.forEach(t => t.classList.add('expected'));
+      setTimeout(() => targets.forEach(t => t.classList.remove('expected')), 700);
     }
 
     function nextQuestion() {

@@ -70,10 +70,57 @@
       padding: 14px;
     }
     .panel h2 {
-      margin: 0 0 10px;
+      margin: 0;
       font-size: 15px;
       color: var(--muted);
       font-weight: 600;
+    }
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .panel-head select {
+      border: 1px solid #b7c8f1;
+      background:
+        linear-gradient(180deg, #ffffff 0%, #f3f7ff 100%);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 8px 34px 8px 12px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      min-width: 112px;
+      box-shadow: 0 2px 10px rgba(88, 118, 196, .12);
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-image:
+        linear-gradient(45deg, transparent 50%, #5e78bf 50%),
+        linear-gradient(135deg, #5e78bf 50%, transparent 50%),
+        linear-gradient(180deg, #ffffff 0%, #f3f7ff 100%);
+      background-position:
+        calc(100% - 16px) calc(50% + 1px),
+        calc(100% - 10px) calc(50% + 1px),
+        0 0;
+      background-size: 6px 6px, 6px 6px, 100% 100%;
+      background-repeat: no-repeat;
+      transition: border-color .15s ease, box-shadow .15s ease, transform .08s ease;
+    }
+    .panel-head select:hover {
+      border-color: #96afea;
+      box-shadow: 0 4px 14px rgba(88, 118, 196, .16);
+    }
+    .panel-head select:focus {
+      outline: none;
+      border-color: #6f8fdf;
+      box-shadow: 0 0 0 3px rgba(111, 143, 223, .22), 0 4px 14px rgba(88, 118, 196, .16);
+    }
+    .panel-head select:active {
+      transform: translateY(1px);
     }
     .staff-wrap {
       overflow: auto;
@@ -258,6 +305,19 @@
       filter: saturate(1.08) brightness(1.03);
       box-shadow: inset 0 1px 1px #fff8, 0 6px 14px rgba(72, 100, 174, .35);
     }
+    .dot.disabled {
+      background: radial-gradient(circle at 30% 25%, #f3f6ff 0%, #dfe7fb 62%, #cbd8f5 100%);
+      border-color: #b9c8ee;
+      box-shadow: inset 0 1px 1px #fff8;
+      opacity: .42;
+      cursor: not-allowed;
+      filter: grayscale(.2);
+    }
+    .dot.disabled:hover {
+      transform: none;
+      filter: grayscale(.2);
+      box-shadow: inset 0 1px 1px #fff8;
+    }
     .dot.expected {
       box-shadow: 0 0 0 3px #ffd166, inset 0 1px 1px #fff8, 0 6px 14px rgba(0, 0, 0, .35);
       filter: saturate(1.2) brightness(1.08);
@@ -275,6 +335,14 @@
     .status-ok { color: var(--ok); }
     .status-bad { color: var(--bad); }
     .ctrls { display: flex; gap: 8px; align-items: center; }
+    .ctrls select {
+      border: 1px solid var(--border);
+      background: var(--btn);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
     .ctrls button {
       border: 1px solid var(--border);
       background: var(--btn);
@@ -288,6 +356,13 @@
     }
     @media (max-width: 860px) {
       .main { grid-template-columns: 1fr; }
+      .panel-head {
+        align-items: flex-start;
+      }
+      .panel-head select {
+        min-width: 102px;
+        font-size: 12px;
+      }
       .left-positions {
         grid-template-rows: 58px repeat(5, 58px);
         gap: 10px;
@@ -327,7 +402,14 @@
 
     <div class="main">
       <section class="panel">
-        <h2>当前五线谱音符（高音谱号）</h2>
+        <div class="panel-head">
+          <h2>当前五线谱音符（高音谱号）</h2>
+          <select id="scaleSelect" title="选择练习调性">
+            <option value="all">全部</option>
+            <option value="g_major">G大调</option>
+            <option value="a_major">A大调</option>
+          </select>
+        </div>
         <div class="staff-wrap">
           <svg id="staff" viewBox="0 0 740 280" aria-label="五线谱"></svg>
         </div>
@@ -391,19 +473,41 @@
     const streakNumEl = document.getElementById('streakNum');
     const nextBtn = document.getElementById('nextBtn');
     const toggleNameBtn = document.getElementById('toggleNameBtn');
+    const scaleSelect = document.getElementById('scaleSelect');
+
+    const SCALE_PC = {
+      all: null,
+      g_major: new Set([7, 9, 11, 0, 2, 4, 6]),
+      a_major: new Set([9, 11, 1, 2, 4, 6, 8])
+    };
+    const KEY_SIGNATURE_SHARPS = {
+      all: [],
+      g_major: ['F'],
+      a_major: ['F', 'C', 'G']
+    };
+    const SHARP_STEPS = { F: 8, C: 5, G: 9, D: 6, A: 3, E: 7, B: 4 };
 
     let showName = false;
     let questionCount = 1;
     let correctCount = 0;
     let streak = 0;
+    let currentScale = 'all';
     let current = pickRandom();
 
+    function getActiveNotes() {
+      const allowed = SCALE_PC[currentScale];
+      if (!allowed) return NOTES;
+      return NOTES.filter(note => allowed.has(note.midi % 12));
+    }
+
     function pickRandom() {
-      return NOTES[Math.floor(Math.random() * NOTES.length)];
+      const active = getActiveNotes();
+      return active[Math.floor(Math.random() * active.length)];
     }
 
     function renderButtons() {
       rowsEl.innerHTML = '';
+      const allowed = SCALE_PC[currentScale];
 
       const head = document.createElement('div');
       head.className = 'board-head';
@@ -438,7 +542,12 @@
         openDot.className = 'dot';
         openDot.dataset.id = openNote.id;
         openDot.title = `${openNote.zh} (${openNote.label})`;
-        openDot.onclick = () => choose(openNote);
+        const openEnabled = !allowed || allowed.has(openNote.midi % 12);
+        if (openEnabled) {
+          openDot.onclick = () => choose(openNote);
+        } else {
+          openDot.classList.add('disabled');
+        }
         openStop.appendChild(openDot);
         col.appendChild(openStop);
 
@@ -453,7 +562,12 @@
           b.className = 'dot';
           b.dataset.id = n.id;
           b.title = `${n.zh} (${n.label})`;
-          b.onclick = () => choose(n);
+          const enabled = !allowed || allowed.has(n.midi % 12);
+          if (enabled) {
+            b.onclick = () => choose(n);
+          } else {
+            b.classList.add('disabled');
+          }
           stop.appendChild(b);
 
           stop.classList.add(`slot-${n.slot}`);
@@ -499,6 +613,8 @@
       clef.textContent = '𝄞';
       staff.appendChild(clef);
 
+      drawKeySignature(currentScale, left + 30, staffBottom, NS);
+
       const noteX = 380;
       const y = staffBottom - (note.step * 10);
 
@@ -520,11 +636,12 @@
       stem.setAttribute('stroke-width', '2');
       staff.appendChild(stem);
 
-      if (note.accidental === '#' || note.accidental === 'b') {
+      if (shouldShowAccidental(note)) {
+        const fontSize = note.accidental === '#' ? 48 : 38;
         const acc = document.createElementNS(NS, 'text');
         acc.setAttribute('x', noteX - 40);
-        acc.setAttribute('y', y + 7);
-        acc.setAttribute('font-size', '38');
+        acc.setAttribute('y', toAccidentalBaseline(y, fontSize, note.accidental));
+        acc.setAttribute('font-size', String(fontSize));
         acc.setAttribute('fill', '#8ea3d9');
         acc.textContent = note.accidental === '#' ? '♯' : '♭';
         staff.appendChild(acc);
@@ -539,6 +656,36 @@
       label.setAttribute('fill', '#6f84bf');
       label.textContent = showName ? `目标音：${note.label}（${note.zh}）` : '目标音：？';
       staff.appendChild(label);
+    }
+
+    function drawKeySignature(scale, startX, staffBottom, NS) {
+      const sharps = KEY_SIGNATURE_SHARPS[scale] || [];
+      sharps.forEach((letter, index) => {
+        const step = SHARP_STEPS[letter];
+        const y = staffBottom - (step * 10);
+        const fontSize = 42;
+        const acc = document.createElementNS(NS, 'text');
+        acc.setAttribute('x', startX + index * 22);
+        acc.setAttribute('y', toAccidentalBaseline(y, fontSize, '#'));
+        acc.setAttribute('font-size', String(fontSize));
+        acc.setAttribute('fill', '#8ea3d9');
+        acc.textContent = '♯';
+        staff.appendChild(acc);
+      });
+    }
+
+    function toAccidentalBaseline(centerY, fontSize, accidental) {
+      const factor = accidental === '#' ? 0.39 : 0.34;
+      return centerY + fontSize * factor;
+    }
+
+    function shouldShowAccidental(note) {
+      if (!note.accidental) return false;
+      if (note.accidental === 'b') return true;
+      const keySharps = KEY_SIGNATURE_SHARPS[currentScale] || [];
+      const noteLetter = note.label[0];
+      if (note.accidental === '#' && keySharps.includes(noteLetter)) return false;
+      return true;
     }
 
     function drawLedgerLines(step, x, staffBottom, NS) {
@@ -620,6 +767,18 @@
     nextBtn.onclick = () => {
       streak = 0;
       nextQuestion();
+    };
+
+    scaleSelect.onchange = () => {
+      currentScale = scaleSelect.value;
+      questionCount = 1;
+      correctCount = 0;
+      streak = 0;
+      current = pickRandom();
+      renderButtons();
+      drawStaff(current);
+      refreshStats();
+      statusText.textContent = '点击右侧指板落点，选出对应音高。';
     };
 
     window.addEventListener('keydown', (e) => {

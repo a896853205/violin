@@ -124,6 +124,9 @@
     }
     .staff-wrap {
       overflow: auto;
+      min-height: 470px;
+      display: flex;
+      align-items: center;
     }
     svg { width: 100%; height: auto; display: block; }
     .hint {
@@ -131,6 +134,13 @@
       color: var(--muted);
       font-size: 13px;
       line-height: 1.45;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      width: 100%;
     }
     .fretboard {
       border: 1px solid var(--border);
@@ -322,6 +332,14 @@
       box-shadow: 0 0 0 3px #ffd166, inset 0 1px 1px #fff8, 0 6px 14px rgba(0, 0, 0, .35);
       filter: saturate(1.2) brightness(1.08);
     }
+    .fretboard.celebrate {
+      animation: celebrateFlash .58s ease;
+    }
+    @keyframes celebrateFlash {
+      0% { box-shadow: 0 0 0 0 rgba(56, 211, 159, .0), inset 0 0 0 0 rgba(56, 211, 159, .0); }
+      35% { box-shadow: 0 0 0 3px rgba(56, 211, 159, .38), inset 0 0 0 2px rgba(56, 211, 159, .28); }
+      100% { box-shadow: 0 0 0 0 rgba(56, 211, 159, .0), inset 0 0 0 0 rgba(56, 211, 159, .0); }
+    }
     .foot {
       border-top: 1px solid var(--border);
       padding: 12px 16px;
@@ -356,6 +374,10 @@
     }
     @media (max-width: 860px) {
       .main { grid-template-columns: 1fr; }
+      .staff-wrap {
+        min-height: 0;
+        display: block;
+      }
       .panel-head {
         align-items: flex-start;
       }
@@ -482,6 +504,7 @@
     const scaleSelect = document.getElementById('scaleSelect');
     const modeSelect = document.getElementById('modeSelect');
     const questionTitle = document.getElementById('questionTitle');
+    const fretboardEl = document.getElementById('rows');
 
     const SCALE_PC = {
       all: null,
@@ -503,25 +526,22 @@
     let currentMode = 'staff';
     let current = pickRandom();
 
+    const PRAISE_TEXT = ['太棒了！', '很好！', '答得漂亮！', '稳！', '继续保持！'];
+
     const ROOT_PC = {
       all: 0,
       g_major: 7,
       a_major: 9
     };
 
-    const SOLFEGE_MAP = {
+    const NATURAL_SOLFEGE = {
       0: 'Do',
-      1: 'Di',
       2: 'Re',
-      3: 'Ri',
       4: 'Mi',
       5: 'Fa',
-      6: 'Fi',
       7: 'Sol',
-      8: 'Si',
       9: 'La',
-      10: 'Li',
-      11: 'Si'
+      11: 'Xi'
     };
 
     function getActiveNotes() {
@@ -621,7 +641,7 @@
 
       const left = 110;
       const right = 680;
-      const staffTop = 70;
+      const staffTop = 100;
       const gap = 20;
       const staffBottom = staffTop + gap * 4;
 
@@ -639,7 +659,7 @@
 
       const clef = document.createElementNS(NS, 'text');
       clef.setAttribute('x', 50);
-      clef.setAttribute('y', 130);
+      clef.setAttribute('y', 160);
       clef.setAttribute('font-size', '92');
       clef.setAttribute('fill', '#8ea3d9');
       clef.textContent = '𝄞';
@@ -689,9 +709,9 @@
 
       const tip = document.createElementNS(NS, 'text');
       tip.setAttribute('x', 370);
-      tip.setAttribute('y', 88);
+      tip.setAttribute('y', 96);
       tip.setAttribute('text-anchor', 'middle');
-      tip.setAttribute('font-size', '44');
+      tip.setAttribute('font-size', '34');
       tip.setAttribute('font-weight', '600');
       tip.setAttribute('fill', '#6f84bf');
       tip.textContent = '当前唱名';
@@ -699,18 +719,18 @@
 
       const whiteArea = document.createElementNS(NS, 'rect');
       whiteArea.setAttribute('x', 70);
-      whiteArea.setAttribute('y', 106);
+      whiteArea.setAttribute('y', 104);
       whiteArea.setAttribute('width', 600);
-      whiteArea.setAttribute('height', 128);
+      whiteArea.setAttribute('height', 110);
       whiteArea.setAttribute('rx', 0);
       whiteArea.setAttribute('fill', '#ffffff');
       staff.appendChild(whiteArea);
 
       const name = document.createElementNS(NS, 'text');
       name.setAttribute('x', 370);
-      name.setAttribute('y', 198);
+      name.setAttribute('y', 188);
       name.setAttribute('text-anchor', 'middle');
-      name.setAttribute('font-size', '120');
+      name.setAttribute('font-size', '92');
       name.setAttribute('font-weight', '700');
       name.setAttribute('fill', '#4f6fe0');
       name.textContent = getSolfege(note);
@@ -721,13 +741,32 @@
     function getSolfege(note) {
       const root = ROOT_PC[currentScale] ?? 0;
       const degree = (note.midi % 12 - root + 12) % 12;
-      return SOLFEGE_MAP[degree] || '?';
+      if (NATURAL_SOLFEGE[degree]) return NATURAL_SOLFEGE[degree];
+
+      const preferFlat = note.accidental === 'b';
+      const sharpMap = {
+        1: 'Do♯',
+        3: 'Re♯',
+        6: 'Fa♯',
+        8: 'Sol♯',
+        10: 'La♯'
+      };
+      const flatMap = {
+        1: 'Re♭',
+        3: 'Mi♭',
+        6: 'Sol♭',
+        8: 'La♭',
+        10: 'Xi♭'
+      };
+
+      return preferFlat ? (flatMap[degree] || '?') : (sharpMap[degree] || '?');
     }
 
     function renderQuestion() {
       questionTitle.textContent = currentMode === 'staff'
         ? '当前五线谱音符（高音谱号）'
         : '当前唱名（Do/Re/Mi...）';
+      staff.setAttribute('viewBox', '0 0 740 280');
       if (currentMode === 'staff') {
         drawStaff(current);
       } else {
@@ -802,14 +841,23 @@
       if (isRight) {
         correctCount += 1;
         streak += 1;
-        statusText.innerHTML = `<span class="status-ok">✅ 正确！${selected.label} = ${selected.zh}</span>`;
-        setTimeout(nextQuestion, 380);
+        const praise = PRAISE_TEXT[Math.floor(Math.random() * PRAISE_TEXT.length)];
+        statusText.innerHTML = `<span class="status-ok">✅ ${praise} ${selected.label} = ${selected.zh}</span>`;
+        playSuccessFeedback();
+        setTimeout(nextQuestion, 620);
       } else {
         streak = 0;
         statusText.innerHTML = `<span class="status-bad">❌ 不对。你选的是 ${selected.label}（${selected.zh}）；正确是 ${current.label}（${current.zh}）。</span>`;
         highlightExpected();
       }
       refreshStats();
+    }
+
+    function playSuccessFeedback() {
+      fretboardEl.classList.remove('celebrate');
+      void fretboardEl.offsetWidth;
+      fretboardEl.classList.add('celebrate');
+      setTimeout(() => fretboardEl.classList.remove('celebrate'), 620);
     }
 
     function highlightExpected() {

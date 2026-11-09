@@ -528,12 +528,6 @@
 
     const PRAISE_TEXT = ['太棒了！', '很好！', '答得漂亮！', '稳！', '继续保持！'];
 
-    const ROOT_PC = {
-      all: 0,
-      g_major: 7,
-      a_major: 9
-    };
-
     const NATURAL_SOLFEGE = {
       0: 'Do',
       2: 'Re',
@@ -739,27 +733,25 @@
     }
 
     function getSolfege(note) {
-      const root = ROOT_PC[currentScale] ?? 0;
-      const degree = (note.midi % 12 - root + 12) % 12;
-      if (NATURAL_SOLFEGE[degree]) return NATURAL_SOLFEGE[degree];
-
-      const preferFlat = note.accidental === 'b';
-      const sharpMap = {
-        1: 'Do♯',
-        3: 'Re♯',
-        6: 'Fa♯',
-        8: 'Sol♯',
-        10: 'La♯'
-      };
-      const flatMap = {
-        1: 'Re♭',
-        3: 'Mi♭',
-        6: 'Sol♭',
-        8: 'La♭',
-        10: 'Xi♭'
+      const baseByLetter = {
+        C: 'Do',
+        D: 'Re',
+        E: 'Mi',
+        F: 'Fa',
+        G: 'Sol',
+        A: 'La',
+        B: 'Xi'
       };
 
-      return preferFlat ? (flatMap[degree] || '?') : (sharpMap[degree] || '?');
+      const m = String(note.label).match(/^([A-G])([#♯b♭]?)/);
+      if (!m) return '?';
+      const letter = m[1];
+      const accidental = m[2];
+      const base = baseByLetter[letter] || '?';
+
+      if (accidental === '#' || accidental === '♯') return `${base}♯`;
+      if (accidental === 'b' || accidental === '♭') return `${base}♭`;
+      return base;
     }
 
     function renderQuestion() {
@@ -870,14 +862,9 @@
       setTimeout(() => targets.forEach(t => t.classList.remove('expected')), 700);
     }
 
-    function getDegree(midi) {
-      const root = ROOT_PC[currentScale] ?? 0;
-      return (midi % 12 - root + 12) % 12;
-    }
-
     function isCorrectSelection(selected, target) {
       if (currentMode === 'solfege') {
-        return getDegree(selected.midi) === getDegree(target.midi);
+        return (selected.midi % 12) === (target.midi % 12);
       }
       return selected.midi === target.midi;
     }

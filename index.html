@@ -403,17 +403,23 @@
     <div class="main">
       <section class="panel">
         <div class="panel-head">
-          <h2>当前五线谱音符（高音谱号）</h2>
-          <select id="scaleSelect" title="选择练习调性">
-            <option value="all">全部</option>
-            <option value="g_major">G大调</option>
-            <option value="a_major">A大调</option>
-          </select>
+          <h2 id="questionTitle">当前五线谱音符（高音谱号）</h2>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <select id="modeSelect" title="选择出题模式">
+              <option value="staff">五线谱</option>
+              <option value="solfege">唱名</option>
+            </select>
+            <select id="scaleSelect" title="选择练习调性">
+              <option value="all">全部</option>
+              <option value="g_major">G大调</option>
+              <option value="a_major">A大调</option>
+            </select>
+          </div>
         </div>
         <div class="staff-wrap">
           <svg id="staff" viewBox="0 0 740 280" aria-label="五线谱"></svg>
         </div>
-        <div class="hint" id="statusText">点击右侧指板落点，选出对应音高。</div>
+        <div class="hint" id="statusText"></div>
       </section>
 
       <section class="panel">
@@ -474,6 +480,8 @@
     const nextBtn = document.getElementById('nextBtn');
     const toggleNameBtn = document.getElementById('toggleNameBtn');
     const scaleSelect = document.getElementById('scaleSelect');
+    const modeSelect = document.getElementById('modeSelect');
+    const questionTitle = document.getElementById('questionTitle');
 
     const SCALE_PC = {
       all: null,
@@ -492,7 +500,29 @@
     let correctCount = 0;
     let streak = 0;
     let currentScale = 'all';
+    let currentMode = 'staff';
     let current = pickRandom();
+
+    const ROOT_PC = {
+      all: 0,
+      g_major: 7,
+      a_major: 9
+    };
+
+    const SOLFEGE_MAP = {
+      0: 'Do',
+      1: 'Di',
+      2: 'Re',
+      3: 'Ri',
+      4: 'Mi',
+      5: 'Fa',
+      6: 'Fi',
+      7: 'Sol',
+      8: 'Si',
+      9: 'La',
+      10: 'Li',
+      11: 'Si'
+    };
 
     function getActiveNotes() {
       const allowed = SCALE_PC[currentScale];
@@ -651,13 +681,58 @@
 
       drawLedgerLines(note.step, noteX, staffBottom, NS);
 
-      const label = document.createElementNS(NS, 'text');
-      label.setAttribute('x', left);
-      label.setAttribute('y', 232);
-      label.setAttribute('font-size', '20');
-      label.setAttribute('fill', '#6f84bf');
-      label.textContent = showName ? `目标音：${note.label}（${note.zh}）` : '目标音：？';
-      staff.appendChild(label);
+    }
+
+    function drawSolfege(note) {
+      const NS = 'http://www.w3.org/2000/svg';
+      staff.innerHTML = '';
+
+      const tip = document.createElementNS(NS, 'text');
+      tip.setAttribute('x', 370);
+      tip.setAttribute('y', 88);
+      tip.setAttribute('text-anchor', 'middle');
+      tip.setAttribute('font-size', '44');
+      tip.setAttribute('font-weight', '600');
+      tip.setAttribute('fill', '#6f84bf');
+      tip.textContent = '当前唱名';
+      staff.appendChild(tip);
+
+      const whiteArea = document.createElementNS(NS, 'rect');
+      whiteArea.setAttribute('x', 70);
+      whiteArea.setAttribute('y', 106);
+      whiteArea.setAttribute('width', 600);
+      whiteArea.setAttribute('height', 128);
+      whiteArea.setAttribute('rx', 0);
+      whiteArea.setAttribute('fill', '#ffffff');
+      staff.appendChild(whiteArea);
+
+      const name = document.createElementNS(NS, 'text');
+      name.setAttribute('x', 370);
+      name.setAttribute('y', 198);
+      name.setAttribute('text-anchor', 'middle');
+      name.setAttribute('font-size', '120');
+      name.setAttribute('font-weight', '700');
+      name.setAttribute('fill', '#4f6fe0');
+      name.textContent = getSolfege(note);
+      staff.appendChild(name);
+
+    }
+
+    function getSolfege(note) {
+      const root = ROOT_PC[currentScale] ?? 0;
+      const degree = (note.midi % 12 - root + 12) % 12;
+      return SOLFEGE_MAP[degree] || '?';
+    }
+
+    function renderQuestion() {
+      questionTitle.textContent = currentMode === 'staff'
+        ? '当前五线谱音符（高音谱号）'
+        : '当前唱名（Do/Re/Mi...）';
+      if (currentMode === 'staff') {
+        drawStaff(current);
+      } else {
+        drawSolfege(current);
+      }
     }
 
     function drawKeySignature(scale, startX, staffBottom, NS) {
@@ -723,7 +798,7 @@
     }
 
     function choose(selected) {
-      const isRight = selected.midi === current.midi;
+      const isRight = isCorrectSelection(selected, current);
       if (isRight) {
         correctCount += 1;
         streak += 1;
@@ -738,20 +813,33 @@
     }
 
     function highlightExpected() {
-      const targets = rowsEl.querySelectorAll(`.dot[data-midi="${String(current.midi)}"]`);
+      const targets = Array.from(rowsEl.querySelectorAll('.dot')).filter((dot) => {
+        const midi = Number(dot.dataset.midi);
+        return isCorrectSelection({ midi }, current);
+      });
       if (!targets.length) return;
       targets.forEach(t => t.classList.add('expected'));
       setTimeout(() => targets.forEach(t => t.classList.remove('expected')), 700);
     }
 
+    function getDegree(midi) {
+      const root = ROOT_PC[currentScale] ?? 0;
+      return (midi % 12 - root + 12) % 12;
+    }
+
+    function isCorrectSelection(selected, target) {
+      if (currentMode === 'solfege') {
+        return getDegree(selected.midi) === getDegree(target.midi);
+      }
+      return selected.midi === target.midi;
+    }
+
     function nextQuestion() {
       questionCount += 1;
       current = pickRandom();
-      drawStaff(current);
+      renderQuestion();
       refreshStats();
-      if (!statusText.textContent.includes('不对')) {
-        statusText.textContent = '点击右侧指板落点，选出对应音高。';
-      }
+      if (!statusText.textContent.includes('不对')) statusText.textContent = '';
     }
 
     function refreshStats() {
@@ -763,7 +851,7 @@
     toggleNameBtn.onclick = () => {
       showName = !showName;
       renderButtons();
-      drawStaff(current);
+      renderQuestion();
     };
 
     nextBtn.onclick = () => {
@@ -778,9 +866,14 @@
       streak = 0;
       current = pickRandom();
       renderButtons();
-      drawStaff(current);
+      renderQuestion();
       refreshStats();
-      statusText.textContent = '点击右侧指板落点，选出对应音高。';
+      statusText.textContent = '';
+    };
+
+    modeSelect.onchange = () => {
+      currentMode = modeSelect.value;
+      renderQuestion();
     };
 
     window.addEventListener('keydown', (e) => {
@@ -791,7 +884,7 @@
     });
 
     renderButtons();
-    drawStaff(current);
+    renderQuestion();
     refreshStats();
   </script>
 </body>

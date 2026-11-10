@@ -727,7 +727,7 @@
       name.setAttribute('font-size', '92');
       name.setAttribute('font-weight', '700');
       name.setAttribute('fill', '#4f6fe0');
-      name.textContent = getSolfege(note);
+      name.textContent = `${getSolfege(note)} (${getLetterName(note)})`;
       staff.appendChild(name);
 
     }
@@ -752,6 +752,16 @@
       if (accidental === '#' || accidental === '♯') return `${base}♯`;
       if (accidental === 'b' || accidental === '♭') return `${base}♭`;
       return base;
+    }
+
+    function getLetterName(note) {
+      const m = String(note.label).match(/^([A-G])([#♯b♭]?)/);
+      if (!m) return '?';
+      const letter = m[1];
+      const accidental = m[2];
+      if (accidental === '#' || accidental === '♯') return `${letter}♯`;
+      if (accidental === 'b' || accidental === '♭') return `${letter}♭`;
+      return letter;
     }
 
     function renderQuestion() {
